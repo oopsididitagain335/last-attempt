@@ -1,10 +1,5 @@
 // pages/api/utils/discord-bot.js
 
-/**
- * Discord bot that listens for "!link" and sends a secure link to connect accounts
- * Runs as background worker on Render
- */
-
 import { Client, GatewayIntentBits } from 'discord.js';
 import { getDb } from './db';
 
@@ -56,7 +51,7 @@ export default async function handler(req, res) {
 
         const linkUrl = `${process.env.BASE_URL}/link/${linkToken}`;
 
-        // Send DM
+        // Send DM to user
         await message.author.send({
           content: `🔗 Click below to link your Discord to your TheBioLink account:\n${linkUrl}\n\nThis link expires in 15 minutes.`,
         });
@@ -69,4 +64,28 @@ export default async function handler(req, res) {
       } catch (err) {
         console.error('Error in !link command:', err);
         try {
-          await message.author.send('❌ Failed to send
+          await message.author.send('❌ Failed to send link. Please try again later.');
+        } catch (dmErr) {
+          // If DM fails (e.g., DMs disabled)
+          await message.reply({
+            content: `<@${message.author.id}> I couldn't send you a DM. Please enable server DMs and try again.`,
+            allowedMentions: { users: [message.author.id] },
+          });
+        }
+      }
+    });
+
+    // Login to Discord
+    client.login(process.env.DISCORD_BOT_TOKEN).catch((err) => {
+      console.error('❌ Failed to log in Discord bot:', err);
+    });
+  }
+
+  // Optional: health check
+  if (res) {
+    res.status(200).json({ status: 'Discord bot worker is running' });
+  }
+}
+
+// Auto-start bot (for background workers like on Render)
+handler();

@@ -1,5 +1,5 @@
-import { getDb } from '../../../utils/db';
-import { send2FACode } from '../../../utils/mailer';
+import { getDb } from '../utils/db';
+import { send2FACode } from '../utils/mailer';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
@@ -10,26 +10,36 @@ export default async function handler(req, res) {
   if (!email || !password)
     return res.status(400).json({ error: 'Email and password required' });
 
-  const db = await getDb();
-  const existing = await db.collection('users').findOne({ email });
-  if (existing)
-    return res.status(400).json({ error: 'Email already in use' });
+  try {
+    const db = await getDb();
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const twoFactorToken = crypto.randomBytes(3).toString('hex').toUpperCase(); // 6-digit
-  const twoFactorExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+    // Check if email already exists
+    const existing = await db.collection('users').findOne({ email });
+    if (existing)
+      return res.status(400).json({ error: 'Email already in use' });
 
-  // Temp store user in pending-users
-  await db.collection('pending-users').insertOne({
-    email,
-    password: hashedPassword,
-    twoFactorToken,
-    twoFactorExpiry,
-    createdAt: new Date(),
-  });
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Send 2FA code via email
-  await send2FACode(email, twoFactorToken);
+    // Generate 2FA code
+    const twoFactorToken = crypto.randomBytes(3).toString('hex').toUpperCase(); // 6-digit
+    const twoFactorExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-  res.status(200).json({ success: true, tempToken: email }); // use email as tempToken
+    // Store user temporarily
+    await db.collection('pending-users').insertOne({
+      email,
+      password: hashedPassword,
+      twoFactorToken,
+      twoFactorExpiry,
+      createdAt: new Date(),
+    });
+
+    // Send 2FA email
+    await send2FACode(email, twoFactorToken);
+
+    res.status(200).json({ success: true, tempToken: email });
+  } catch (err) {
+    console.error('Signup error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 }

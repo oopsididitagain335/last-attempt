@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function Signup({ setUser }) {
+export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,8 +15,7 @@ export default function Signup({ setUser }) {
     });
     const data = await res.json();
     if (data.success) {
-      setSuccess('Account created! Now go to the Discord server and type: <code>!link</code>');
-      setError('');
+      setSuccess('✅ Check your email for 2FA code to complete signup.');
     } else {
       setError(data.error);
     }
@@ -28,28 +27,11 @@ export default function Signup({ setUser }) {
         <h2>Create Account</h2>
         {error && <p style={{ color: 'red' }}>{error}</p>}
         {success ? (
-          <div>
-            <p style={{ color: 'green' }} dangerouslySetInnerHTML={{ __html: success }} />
-            <a href="https://discord.gg/29yDsapcXh" target="_blank" style={styles.btnPrimary}>Join Discord</a>
-          </div>
+          <p style={{ color: 'green' }}>{success}</p>
         ) : (
           <form onSubmit={handleSubmit} style={styles.form}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              style={styles.input}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              style={styles.input}
-            />
+            <input placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required style={styles.input} />
+            <input placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} required style={styles.input} />
             <button type="submit" style={styles.btnPrimary}>Sign Up</button>
           </form>
         )}
@@ -63,5 +45,5 @@ const styles = {
   card: { width: '90%', maxWidth: '400px', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', backgroundColor: 'white' },
   form: { display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' },
   input: { padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '16px' },
-  btnPrimary: { padding: '12px', background: '#5865F2', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' },
+  btnPrimary: { padding: '12px', background: '#5865F2', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }
 };

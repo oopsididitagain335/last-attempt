@@ -3,7 +3,7 @@ import { MongoClient } from 'mongodb';
 let client;
 let clientPromise;
 
-const uri = process.env.MONGO_URI; // e.g., mongodb+srv://user:pass@cluster.mongodb.net/dbname
+const uri = process.env.MONGO_URI; 
 const options = {};
 
 if (!uri) throw new Error('Please define MONGO_URI in .env');

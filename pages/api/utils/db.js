@@ -1,16 +1,26 @@
+import { MongoClient } from 'mongodb';
+
 let client;
 let clientPromise;
 
-if (!global._mongoClientPromise) {
-  const { MongoClient } = require('mongodb');
-  client = new MongoClient(process.env.MONGO_URI);
-  global._mongoClientPromise = client.connect();
+const uri = process.env.MONGO_URI; // e.g., mongodb+srv://user:pass@cluster.mongodb.net/dbname
+const options = {};
+
+if (!uri) throw new Error('Please define MONGO_URI in .env');
+
+if (process.env.NODE_ENV === 'development') {
+  // In dev, use a global variable so it doesn't create multiple connections
+  if (!global._mongoClientPromise) {
+    client = new MongoClient(uri, options);
+    global._mongoClientPromise = client.connect();
+  }
+  clientPromise = global._mongoClientPromise;
+} else {
+  client = new MongoClient(uri, options);
+  clientPromise = client.connect();
 }
-clientPromise = global._mongoClientPromise;
 
 export async function getDb() {
   const client = await clientPromise;
-  return client.db('thebiolink');
+  return client.db(); // use default DB from URI
 }
-
-export default clientPromise;

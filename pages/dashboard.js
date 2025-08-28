@@ -1,17 +1,30 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [name, setName] = useState('');
   const [links, setLinks] = useState([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  // Utility: Get cookie by name
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    return parts.length === 2 ? parts.pop().split(';').shift() : null;
+  }
 
   useEffect(() => {
     const token = getCookie('token');
-    if (!token) return setError('Not logged in');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
 
     fetch('/api/user/profile', {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { 'Authorization': `Bearer ${token}` },
     })
       .then(r => r.json())
       .then(data => {
@@ -21,39 +34,51 @@ export default function Dashboard() {
           setLinks(data.user.links || []);
         } else {
           setError(data.error || 'Failed to load profile');
+          if (data.error === 'Invalid token') router.push('/login');
         }
       })
-      .catch(() => setError('Failed to load data'));
+      .catch(() => setError('Failed to load data'))
+      .finally(() => setLoading(false));
   }, []);
 
-  const save = () => {
+  const save = async () => {
     const token = getCookie('token');
-    fetch('/api/user/update', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ name, links })
-    })
-    .then(() => alert('Saved!'));
+    if (!token) return router.push('/login');
+
+    try {
+      const res = await fetch('/api/user/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, links })
+      });
+      const data = await res.json();
+      if (data.success) alert('Saved!');
+      else setError(data.error || 'Failed to save');
+    } catch {
+      setError('Failed to save');
+    }
   };
 
   const addLink = () => setLinks([...links, { label: 'New Link', url: 'https://example.com' }]);
   const removeLink = (i) => setLinks(links.filter((_, idx) => idx !== i));
 
+  if (loading) return <div style={styles.container}>Loading...</div>;
   if (error) return <div style={styles.error}>{error}</div>;
-  if (!user) return <div style={styles.container}>Loading...</div>;
 
   return (
     <div style={styles.container}>
       <h1 style={styles.h1}>🛠️ Dashboard</h1>
+
       <input
         placeholder="Name"
         value={name}
         onChange={e => setName(e.target.value)}
         style={styles.input}
       />
+
       <h2 style={styles.h2}>Your Links</h2>
       {links.map((link, i) => (
         <div key={i} style={styles.row}>
@@ -78,22 +103,17 @@ export default function Dashboard() {
           <button onClick={() => removeLink(i)} style={styles.removeBtn}>✖</button>
         </div>
       ))}
+
       <button onClick={addLink} style={styles.btn}>+ Add Link</button>
       <button onClick={save} style={styles.saveBtn}>💾 Save</button>
+
       <a href={`/u/${user.username}`} style={styles.viewBtn}>👉 View Page</a>
       <a href="/api/auth/logout" style={styles.logoutBtn}>Logout</a>
     </div>
   );
 }
 
-// Utility: Get cookie by name
-function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  return parts.length === 2 ? parts.pop().split(';').shift() : null;
-}
-
-// Base button style to avoid self-reference issue
+// Base button style
 const baseBtn = {
   padding: '12px',
   background: '#95a5a6',
@@ -137,10 +157,7 @@ const styles = {
     cursor: 'pointer',
   },
   btn: baseBtn,
-  saveBtn: {
-    ...baseBtn,
-    background: '#5865F2',
-  },
+  saveBtn: { ...baseBtn, background: '#5865F2' },
   viewBtn: {
     display: 'block',
     padding: '12px',

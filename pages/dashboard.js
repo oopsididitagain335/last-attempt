@@ -29,6 +29,8 @@ export default function Dashboard() {
 
   const save = () => {
     const token = getCookie('token');
+    if (!token) return setError('Not authenticated');
+
     fetch('/api/user/update', {
       method: 'POST',
       headers: {
@@ -37,11 +39,17 @@ export default function Dashboard() {
       },
       body: JSON.stringify({ name, links })
     })
-    .then(() => alert('Saved!'));
+    .then(() => alert('Saved!'))
+    .catch(() => setError('Save failed'));
   };
 
-  const addLink = () => setLinks([...links, { label: 'New Link', url: 'https://example.com' }]);
-  const removeLink = (i) => setLinks(links.filter((_, idx) => idx !== i));
+  const addLink = () => {
+    setLinks([...links, { label: 'New Link', url: 'https://example.com' }]);
+  };
+
+  const removeLink = (i) => {
+    setLinks(links.filter((_, idx) => idx !== i));
+  };
 
   if (error) return <div style={styles.error}>{error}</div>;
   if (!user) return <div style={styles.container}>Loading...</div>;
@@ -60,12 +68,18 @@ export default function Dashboard() {
         <div key={i} style={styles.row}>
           <input
             value={link.label}
-            onChange={e => { link.label = e.target.value; setLinks([...links]); }}
+            onChange={e => {
+              link.label = e.target.value;
+              setLinks([...links]);
+            }}
             style={{ ...styles.input, width: '40%' }}
           />
           <input
             value={link.url}
-            onChange={e => { link.url = e.target.value; setLinks([...links]); }}
+            onChange={e => {
+              link.url = e.target.value;
+              setLinks([...links]);
+            }}
             style={{ ...styles.input, width: '40%' }}
           />
           <button onClick={() => removeLink(i)} style={styles.removeBtn}>✖</button>
@@ -79,11 +93,12 @@ export default function Dashboard() {
   );
 }
 
-// Utility: Get cookie by name
+// ✅ Safe utility: Get cookie by name (avoids SSR errors)
 function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  return parts.length === 2 ? parts.pop().split(';').shift() : null;
+  // Prevent access to document during SSR
+  if (typeof document === 'undefined') return null;
+  const matched = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return matched ? matched[2] : null;
 }
 
 // Inline styles

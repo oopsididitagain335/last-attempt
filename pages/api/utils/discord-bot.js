@@ -1,5 +1,3 @@
-// pages/api/utils/discord-bot.js
-
 import { Client, GatewayIntentBits } from 'discord.js';
 import { getDb } from './db';
 
@@ -16,76 +14,38 @@ export default async function handler(req, res) {
     });
 
     client.on('ready', () => {
-      console.log(`🤖 Discord Bot: ${client.user.tag} is online and ready!`);
+      console.log(`🤖 Discord Bot: ${client.user.tag} is ready!`);
     });
 
     client.on('messageCreate', async (message) => {
-      // Ignore bots and non-commands
-      if (message.author.bot) return;
-      if (message.content.trim() !== '!link') return;
+      if (message.author.bot || message.content !== '!link') return;
+      if (message.guild?.id !== process.env.DISCORD_SERVER_ID) return;
 
-      // Must be in your server
-      if (!message.guild || message.guild.id !== process.env.DISCORD_SERVER_ID) return;
+      const db = await getDb();
+      const existing = await db.collection('users').findOne({ discordId: message.author.id });
+      if (existing) {
+        return message.reply('✅ Your Discord is already linked.');
+      }
+
+      const token = require('crypto').randomBytes(32).toString('hex');
+      await db.collection('discord_link_tokens').insertOne({
+        token,
+        discordId: message.author.id,
+        expiresAt: new Date(Date.now() + 900000),
+      });
 
       try {
-        const db = await getDb();
-
-        // Check if already linked
-        const existingUser = await db.collection('users').findOne({ discordId: message.author.id });
-        if (existingUser) {
-          return message.reply({
-            content: '✅ Your Discord is already linked to a TheBioLink account!',
-          });
-        }
-
-        // Generate secure one-time token
-        const linkToken = require('crypto').randomBytes(32).toString('hex');
-        const expiresAt = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
-
-        await db.collection('discord_link_tokens').insertOne({
-          token: linkToken,
-          discordId: message.author.id,
-          createdAt: new Date(),
-          expiresAt,
-        });
-
-        const linkUrl = `${process.env.BASE_URL}/link/${linkToken}`;
-
-        // Send DM to user
-        await message.author.send({
-          content: `🔗 Click below to link your Discord to your TheBioLink account:\n${linkUrl}\n\nThis link expires in 15 minutes.`,
-        });
-
-        // Reply in server
-        await message.reply({
-          content: '📨 I sent you a private message with a link to connect your account!',
-          allowedMentions: { users: [message.author.id] },
-        });
+        await message.author.send(`🔗 Link your account: ${process.env.BASE_URL}/link/${token}`);
+        await message.reply('📨 Check your DMs!');
       } catch (err) {
-        console.error('Error in !link command:', err);
-        try {
-          await message.author.send('❌ Failed to send link. Please try again later.');
-        } catch (dmErr) {
-          // If DM fails (e.g., DMs disabled)
-          await message.reply({
-            content: `<@${message.author.id}> I couldn't send you a DM. Please enable server DMs and try again.`,
-            allowedMentions: { users: [message.author.id] },
-          });
-        }
+        await message.reply('❌ Enable DMs to receive the link.');
       }
     });
 
-    // Login to Discord
-    client.login(process.env.DISCORD_BOT_TOKEN).catch((err) => {
-      console.error('❌ Failed to log in Discord bot:', err);
-    });
+    client.login(process.env.DISCORD_BOT_TOKEN).catch(console.error);
   }
 
-  // Optional: health check
-  if (res) {
-    res.status(200).json({ status: 'Discord bot worker is running' });
-  }
+  if (res) res.status(200).json({ running: true });
 }
 
-// Auto-start bot (for background workers like on Render)
 handler();

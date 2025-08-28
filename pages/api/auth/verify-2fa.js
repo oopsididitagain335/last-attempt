@@ -1,12 +1,16 @@
 import { getDb } from '../utils/db';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { token, code } = req.body; // token = email from signup
-  if (!token || !code) return res.status(400).json({ error: 'Token and code required' });
+  const { token, code } = req.body;
+
+  if (typeof token !== 'string' || !token.trim())
+    return res.status(400).json({ error: 'Token is required' });
+
+  if (typeof code !== 'string' || !code.trim())
+    return res.status(400).json({ error: '2FA code is required' });
 
   try {
     const db = await getDb();
@@ -14,8 +18,9 @@ export default async function handler(req, res) {
     const pending = await db.collection('pending-users').findOne({ email: token });
     if (!pending) return res.status(400).json({ error: 'Invalid or expired token' });
 
-    if (pending.twoFactorToken !== code || pending.twoFactorExpiry < new Date())
+    if (pending.twoFactorToken !== code || pending.twoFactorExpiry < new Date()) {
       return res.status(400).json({ error: 'Invalid or expired 2FA code' });
+    }
 
     // Move user to main users collection
     await db.collection('users').insertOne({
@@ -27,7 +32,7 @@ export default async function handler(req, res) {
     // Remove from pending
     await db.collection('pending-users').deleteOne({ email: token });
 
-    // Issue JWT token for session
+    // Issue JWT token
     const jwtToken = jwt.sign(
       { email: pending.email },
       process.env.JWT_SECRET,

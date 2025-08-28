@@ -1,24 +1,36 @@
 import { useState } from 'react';
+import { useRouter } from 'next/router';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (data.success) {
-      setSuccess('✅ Check your email for 2FA code to complete signup.');
-    } else {
-      setError(data.error);
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (data.success && data.tempToken) {
+        router.push(`/verify-2fa?token=${data.tempToken}`);
+      } else {
+        setError(data.error || 'Signup failed.');
+      }
+    } catch (err) {
+      setError('Server error. Please try again.');
     }
+
+    setLoading(false);
   };
 
   return (
@@ -26,15 +38,13 @@ export default function Signup() {
       <div style={styles.card}>
         <h2>Create Account</h2>
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        {success ? (
-          <p style={{ color: 'green' }}>{success}</p>
-        ) : (
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <input placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required style={styles.input} />
-            <input placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} required style={styles.input} />
-            <button type="submit" style={styles.btnPrimary}>Sign Up</button>
-          </form>
-        )}
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <input placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required style={styles.input} />
+          <input placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} required style={styles.input} />
+          <button type="submit" style={styles.btnPrimary} disabled={loading}>
+            {loading ? 'Signing Up...' : 'Sign Up'}
+          </button>
+        </form>
       </div>
     </div>
   );

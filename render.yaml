@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: thebiolink-web
+    runtime: node
+    buildCommand: "npm run build"
+    startCommand: "npm run start"
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+    envVarSecrets:
+      - key: APP_PASSWORD
+        fromSecret: APP_PASSWORD
+      - key: DISCORD_BOT_TOKEN
+        fromSecret: DISCORD_BOT_TOKEN
+      - key: DISCORD_CLIENT_ID
+        fromSecret: DISCORD_CLIENT_ID
+      - key: DISCORD_CLIENT_SECRET
+        fromSecret: DISCORD_CLIENT_SECRET
+      - key: EMAIL
+        fromSecret: EMAIL
+      - key: JWT_SECRET
+        fromSecret: JWT_SECRET
+      - key: MONGO_URI
+        fromSecret: MONGO_URI
+      - key: BASE_URL
+        value: https://thebiolink.onrender.com
+
+  - type: background
+    name: thebiolink-bot
+    runtime: node
+    startCommand: "node discord-bot-runner.js"
+    envVarSecrets:
+      - key: DISCORD_BOT_TOKEN
+        fromSecret: DISCORD_BOT_TOKEN
+      - key: MONGO_URI
+        fromSecret: MONGO_URI

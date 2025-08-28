@@ -1,4 +1,3 @@
-// pages/dashboard.js
 import { useState, useEffect } from 'react';
 
 export default function Dashboard() {
@@ -29,8 +28,6 @@ export default function Dashboard() {
 
   const save = () => {
     const token = getCookie('token');
-    if (!token) return setError('Not authenticated');
-
     fetch('/api/user/update', {
       method: 'POST',
       headers: {
@@ -39,17 +36,11 @@ export default function Dashboard() {
       },
       body: JSON.stringify({ name, links })
     })
-    .then(() => alert('Saved!'))
-    .catch(() => setError('Save failed'));
+    .then(() => alert('Saved!'));
   };
 
-  const addLink = () => {
-    setLinks([...links, { label: 'New Link', url: 'https://example.com' }]);
-  };
-
-  const removeLink = (i) => {
-    setLinks(links.filter((_, idx) => idx !== i));
-  };
+  const addLink = () => setLinks([...links, { label: 'New Link', url: 'https://example.com' }]);
+  const removeLink = (i) => setLinks(links.filter((_, idx) => idx !== i));
 
   if (error) return <div style={styles.error}>{error}</div>;
   if (!user) return <div style={styles.container}>Loading...</div>;
@@ -69,16 +60,18 @@ export default function Dashboard() {
           <input
             value={link.label}
             onChange={e => {
-              link.label = e.target.value;
-              setLinks([...links]);
+              const updatedLinks = [...links];
+              updatedLinks[i].label = e.target.value;
+              setLinks(updatedLinks);
             }}
             style={{ ...styles.input, width: '40%' }}
           />
           <input
             value={link.url}
             onChange={e => {
-              link.url = e.target.value;
-              setLinks([...links]);
+              const updatedLinks = [...links];
+              updatedLinks[i].url = e.target.value;
+              setLinks(updatedLinks);
             }}
             style={{ ...styles.input, width: '40%' }}
           />
@@ -93,13 +86,23 @@ export default function Dashboard() {
   );
 }
 
-// ✅ Safe utility: Get cookie by name (avoids SSR errors)
+// Utility: Get cookie by name
 function getCookie(name) {
-  // Prevent access to document during SSR
-  if (typeof document === 'undefined') return null;
-  const matched = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-  return matched ? matched[2] : null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  return parts.length === 2 ? parts.pop().split(';').shift() : null;
 }
+
+// Base button style to avoid self-reference issue
+const baseBtn = {
+  padding: '12px',
+  background: '#95a5a6',
+  color: 'white',
+  border: 'none',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  marginTop: '10px',
+};
 
 // Inline styles
 const styles = {
@@ -133,17 +136,9 @@ const styles = {
     borderRadius: '6px',
     cursor: 'pointer',
   },
-  btn: {
-    padding: '12px',
-    background: '#95a5a6',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    marginTop: '10px',
-  },
+  btn: baseBtn,
   saveBtn: {
-    ...styles.btn,
+    ...baseBtn,
     background: '#5865F2',
   },
   viewBtn: {

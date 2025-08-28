@@ -1,23 +1,26 @@
 {
   "name": "thebiolink",
   "version": "1.0.0",
+  "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
-    "next": "^14",
-    "react": "^18",
-    "react-dom": "^18",
-    "mongodb": "^6",
-    "jsonwebtoken": "^9",
-    "bcryptjs": "^2",
-    "nodemailer": "^6",
-    "express-rate-limit": "^6",
-    "cookie": "^0.5.0",
-    "querystring": "^0.2.1",
-    "crypto": "^1.0.1",
-    "discord.js": "^14"
+    "next": "^14.2.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "mongodb": "^6.6.2",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "nodemailer": "^6.9.13",
+    "express-rate-limit": "^7.1.5",
+    "discord.js": "^14.15.3",
+    "cookie": "^0.5.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

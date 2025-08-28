@@ -1,5 +1,5 @@
-import { getDb } from '../utils/db';
-import { send2FACode } from '../utils/mailer';
+import { getDb } from '../../../utils/db';
+import { send2FACode } from '../../../utils/mailer';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
@@ -7,7 +7,6 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const { email, password } = req.body;
-
   if (!email || !password)
     return res.status(400).json({ error: 'Email and password required' });
 
@@ -17,10 +16,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Email already in use' });
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const twoFactorToken = crypto.randomBytes(3).toString('hex').toUpperCase(); // 6-digit code
-  const twoFactorExpiry = new Date(Date.now() + 900000); // 15 min
+  const twoFactorToken = crypto.randomBytes(3).toString('hex').toUpperCase(); // 6-digit
+  const twoFactorExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 min
 
-  // Temp store user with 2FA token
+  // Temp store user in pending-users
   await db.collection('pending-users').insertOne({
     email,
     password: hashedPassword,
@@ -29,8 +28,8 @@ export default async function handler(req, res) {
     createdAt: new Date(),
   });
 
-  // Send 2FA code
+  // Send 2FA code via email
   await send2FACode(email, twoFactorToken);
 
-  res.status(200).json({ success: 'Check your email for the 2FA code.' });
+  res.status(200).json({ success: true, tempToken: email }); // use email as tempToken
 }

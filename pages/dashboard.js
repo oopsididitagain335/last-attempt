@@ -9,11 +9,12 @@ export default function Dashboard() {
   const router = useRouter();
 
   // Utility to get cookie
-  function getCookie(name) {
+  const getCookie = (name) => {
+    if (typeof document === 'undefined') return null;
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     return parts.length === 2 ? parts.pop().split(';').shift() : null;
-  }
+  };
 
   // Load user profile
   useEffect(() => {
@@ -30,12 +31,13 @@ export default function Dashboard() {
         if (data.user) {
           setUser(data.user);
           setName(data.user.name || '');
-          setLinks(data.user.links || []);
+          setLinks(Array.isArray(data.user.links) ? data.user.links : []);
         } else {
           setError(data.error || 'Failed to load profile');
           if (data.error === 'Invalid token') router.push('/login');
         }
       } catch (err) {
+        console.error(err);
         setError('Failed to load profile');
       }
     };
@@ -60,25 +62,29 @@ export default function Dashboard() {
       const data = await res.json();
       if (data.success) alert('Saved!');
       else setError(data.error || 'Failed to save');
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError('Failed to save');
     }
   };
 
+  // Link operations
   const addLink = () =>
     setLinks([...links, { label: 'New Link', url: 'https://example.com' }]);
 
-  const removeLink = (i) => setLinks(links.filter((_, idx) => idx !== i));
+  const removeLink = (i) =>
+    setLinks(links.filter((_, idx) => idx !== i));
 
-  const updateLink = (i, field, value) => {
-    const updatedLinks = links.map((link, idx) =>
+  const updateLink = (i, field, value) =>
+    setLinks(links.map((link, idx) =>
       idx === i ? { ...link, [field]: value } : link
-    );
-    setLinks(updatedLinks);
-  };
+    ));
 
-  if (error) return <div style={styles.error}>{error}</div>;
-  if (!user) return <div style={styles.container}>Loading...</div>;
+  if (error)
+    return <div style={styles.error}>{error}</div>;
+
+  if (!user)
+    return <div style={styles.container}>Loading...</div>;
 
   return (
     <div style={styles.container}>
@@ -92,19 +98,22 @@ export default function Dashboard() {
       />
 
       <h2 style={styles.h2}>Your Links</h2>
-      {links.map((link, i) => (
+      {Array.isArray(links) && links.map((link, i) => (
         <div key={i} style={styles.row}>
           <input
-            value={link.label}
+            value={link.label || ''}
             onChange={(e) => updateLink(i, 'label', e.target.value)}
             style={{ ...styles.input, width: '40%' }}
           />
           <input
-            value={link.url}
+            value={link.url || ''}
             onChange={(e) => updateLink(i, 'url', e.target.value)}
             style={{ ...styles.input, width: '40%' }}
           />
-          <button onClick={() => removeLink(i)} style={styles.removeBtn}>
+          <button
+            onClick={() => removeLink(i)}
+            style={styles.removeBtn}
+          >
             ✖
           </button>
         </div>
@@ -126,6 +135,7 @@ export default function Dashboard() {
   );
 }
 
+// Styles
 const baseBtn = {
   padding: '12px',
   background: '#95a5a6',

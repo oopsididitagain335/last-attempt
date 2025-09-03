@@ -1,4 +1,4 @@
-import { getDb } from '../utils/db';
+import { getDb } from '../../utils/db';
 import jwt from 'jsonwebtoken';
 
 export default async function handler(req, res) {
@@ -8,11 +8,7 @@ export default async function handler(req, res) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const db = await getDb();
-
-    const user = await db.collection('users').findOne(
-      { email: decoded.email },
-      { projection: { password: 0 } }
-    );
+    const user = await db.collection('users').findOne({ email: decoded.email }, { projection: { password: 0 } });
 
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.status(200).json({ user });

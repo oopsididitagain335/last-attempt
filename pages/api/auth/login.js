@@ -1,4 +1,4 @@
-import { getDb } from '../../../db'; // Fixed import path
+import { getDb } from '../utils/db'; // Fixed import path
 import bcrypt from 'bcryptjs';
 import { send2FACode } from '../utils/mailer';
 import crypto from 'crypto';

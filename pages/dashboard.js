@@ -20,14 +20,13 @@ export default function Dashboard() {
   useEffect(() => {
     const token = getCookie('token');
     if (!token) return router.push('/login');
-
+    
     const fetchProfile = async () => {
       try {
         const res = await fetch('/api/user/profile', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
-
         if (data.user) {
           setUser(data.user);
           setName(data.user.name || '');
@@ -41,7 +40,6 @@ export default function Dashboard() {
         setError('Failed to load profile');
       }
     };
-
     fetchProfile();
   }, [router]);
 
@@ -49,7 +47,6 @@ export default function Dashboard() {
   const save = async () => {
     const token = getCookie('token');
     if (!token) return router.push('/login');
-
     try {
       const res = await fetch('/api/user/update', {
         method: 'POST',
@@ -69,16 +66,19 @@ export default function Dashboard() {
   };
 
   // Link operations
-  const addLink = () =>
+  const addLink = () => {
     setLinks([...links, { label: 'New Link', url: 'https://example.com' }]);
-
-  const removeLink = (i) =>
+  };
+  
+  const removeLink = (i) => {
     setLinks(links.filter((_, idx) => idx !== i));
-
-  const updateLink = (i, field, value) =>
+  };
+  
+  const updateLink = (i, field, value) => {
     setLinks(links.map((link, idx) =>
       idx === i ? { ...link, [field]: value } : link
     ));
+  };
 
   if (error)
     return <div style={styles.error}>{error}</div>;
@@ -89,14 +89,12 @@ export default function Dashboard() {
   return (
     <div style={styles.container}>
       <h1 style={styles.h1}>🛠️ Dashboard</h1>
-
       <input
         placeholder="Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
         style={styles.input}
       />
-
       <h2 style={styles.h2}>Your Links</h2>
       {Array.isArray(links) && links.map((link, i) => (
         <div key={i} style={styles.row}>
@@ -118,7 +116,6 @@ export default function Dashboard() {
           </button>
         </div>
       ))}
-
       <button onClick={addLink} style={styles.btn}>
         + Add Link
       </button>

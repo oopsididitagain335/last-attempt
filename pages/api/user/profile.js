@@ -12,7 +12,8 @@ export default async function handler(req, res) {
 
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.status(200).json({ user });
-  } catch {
+  } catch (error) {
+    console.error('Profile error:', error);
     res.status(401).json({ error: 'Invalid token' });
   }
 }

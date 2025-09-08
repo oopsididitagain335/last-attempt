@@ -1,4 +1,4 @@
-import { getDb } from '../../../db'; // Fixed import path
+import { getDb } from '../utils/db'; // Fixed import path
 import jwt from 'jsonwebtoken';
 export default async function handler(req, res) {
   const token = req.headers.authorization?.split(' ')[1];

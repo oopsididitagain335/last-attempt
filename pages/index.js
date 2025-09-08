@@ -27,9 +27,10 @@ export default function Home() {
   );
 }
 
+// Enhanced styles with fallback fonts and consistent properties
 const styles = {
   container: {
-    fontFamily: "'Segoe UI', sans-serif",
+    fontFamily: "'Segoe UI', sans-serif, Arial",
     padding: "20px",
     minHeight: "100vh",
     backgroundColor: "#f9f9fb",
@@ -53,6 +54,7 @@ const styles = {
     textDecoration: "none",
     color: "#555",
     fontSize: "14px",
+    display: "inline-block", // Ensure proper rendering
   },
   btnPrimary: {
     padding: "10px 16px",
@@ -63,6 +65,7 @@ const styles = {
     borderRadius: "6px",
     textDecoration: "none",
     fontSize: "14px",
+    display: "inline-block", // Ensure proper rendering
   },
   main: {
     textAlign: "center",

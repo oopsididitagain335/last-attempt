@@ -1,5 +1,6 @@
-// pages/login.js
+// /pages/login.js
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -8,6 +9,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [is2FA, setIs2FA] = useState(false);
   const [code, setCode] = useState('');
+  const router = useRouter();
 
   // Check URL for errors (e.g., from Discord)
   useEffect(() => {
@@ -36,7 +38,7 @@ export default function Login() {
       if (data.requires2FA) {
         setIs2FA(true); // Move to 2FA step
       } else {
-        setError('Invalid credentials');
+        setError(data.error || 'Invalid credentials');
       }
     } catch (err) {
       setError('Something went wrong. Please try again.');
@@ -61,10 +63,9 @@ export default function Login() {
       const data = await res.json();
 
       if (data.token) {
-        // Set JWT cookie
-        document.cookie = `token=${data.token}; path=/; max-age=3600; HttpOnly=false`;
-        // Redirect to dashboard
-        window.location.href = '/dashboard';
+        // ✅ Server set the cookie automatically via Set-Cookie header!
+        // Just redirect — no need to touch document.cookie
+        router.push('/dashboard'); // Next.js client-side nav
       } else {
         setError(data.error || 'Invalid or expired code.');
       }
@@ -80,7 +81,6 @@ export default function Login() {
       <div style={styles.card}>
         <h1 style={styles.title}>🔐 Login to TheBioLink</h1>
 
-        {/* Show 2FA form or login form */}
         {!is2FA ? (
           <>
             {error && <p style={styles.error}>{error}</p>}
@@ -133,7 +133,7 @@ export default function Login() {
                 type="text"
                 placeholder="123456"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 maxLength="6"
                 required
                 style={styles.input}

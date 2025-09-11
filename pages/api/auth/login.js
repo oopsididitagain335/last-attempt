@@ -1,7 +1,7 @@
 // /pages/api/auth/login.js
-import { getDb } from '../../utils/db';
+import { getDb } from '../utils/db'; // ← Fixed path
 import bcrypt from 'bcryptjs';
-import { send2FACode } from '../../utils/mailer';
+import { send2FACode } from '../utils/mailer'; // ← Fixed path
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
@@ -18,9 +18,8 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Generate 6-digit numeric code
     const code = crypto.randomInt(100000, 999999).toString();
-    const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const expiry = new Date(Date.now() + 15 * 60 * 1000);
 
     await db.collection('2fa-codes').updateOne(
       { email },

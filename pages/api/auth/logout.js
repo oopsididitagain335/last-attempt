@@ -1,4 +1,8 @@
+// /pages/api/auth/logout.js
 export default function handler(req, res) {
-  res.setHeader('Set-Cookie', 'token=; path=/; max-age=0');
-  res.status(200).json({ success: true });
+  // Clear the token cookie
+  res.setHeader('Set-Cookie', 'token=; Path=/; HttpOnly; Max-Age=0');
+
+  // Redirect to login
+  res.redirect('/login');
 }

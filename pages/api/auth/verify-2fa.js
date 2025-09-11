@@ -15,18 +15,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid or expired 2FA code' });
   }
 
-  // ✅ SUCCESS: Issue JWT token as HTTP-only cookie
+  // Issue JWT token
   const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-  // Set cookie — HttpOnly, Secure (in prod), Path=/, Max-Age=3600
-  res.setHeader(
-    'Set-Cookie',
-    `token=${token}; Path=/; HttpOnly; Max-Age=3600; ${process.env.NODE_ENV === 'production' ? 'Secure;' : ''}`
-  );
+  // Set HttpOnly cookie
+  res.setHeader('Set-Cookie', `token=${token}; Path=/; HttpOnly; Max-Age=3600`);
 
-  // Optional: Clear 2FA code after use (security best practice)
+  // Delete 2FA code after use (security)
   await db.collection('2fa-codes').deleteOne({ email });
 
-  // Return token in body too for client-side routing (optional)
-  res.status(200).json({ token, message: 'Login successful' });
+  res.status(200).json({ token });
 }

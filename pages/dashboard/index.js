@@ -1,0 +1,223 @@
+// /pages/dashboard/index.js
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+
+export default function Dashboard() {
+  const [user, setUser] = useState(null);
+  const [name, setName] = useState('');
+  const [links, setLinks] = useState([]);
+  const [error, setError] = useState('');
+  const router = useRouter();
+
+  // Utility to get cookie
+  const getCookie = (name) => {
+    if (typeof document === 'undefined') return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    return parts.length === 2 ? parts.pop().split(';').shift() : null;
+  };
+
+  // Load user profile
+  useEffect(() => {
+    const token = getCookie('token');
+    if (!token) return router.push('/login');
+
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('/api/user/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.user) {
+          setUser(data.user);
+          setName(data.user.name || '');
+          setLinks(Array.isArray(data.user.links) ? data.user.links : []);
+        } else {
+          setError(data.error || 'Failed to load profile');
+          if (data.error === 'Invalid token') router.push('/login');
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load profile');
+      }
+    };
+    fetchProfile();
+  }, [router]);
+
+  // Save updates
+  const save = async () => {
+    const token = getCookie('token');
+    if (!token) return router.push('/login');
+
+    try {
+      const res = await fetch('/api/user/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name, links }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Saved!');
+      } else {
+        setError(data.error || 'Failed to save');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Failed to save');
+    }
+  };
+
+  // Link operations
+  const addLink = () => {
+    setLinks([...links, { label: 'New Link', url: 'https://example.com' }]);
+  };
+
+  const removeLink = (i) => {
+    setLinks(links.filter((_, idx) => idx !== i));
+  };
+
+  const updateLink = (i, field, value) => {
+    setLinks(
+      links.map((link, idx) =>
+        idx === i ? { ...link, [field]: value } : link
+      )
+    );
+  };
+
+  if (error)
+    return <div style={styles.error}>{error}</div>;
+
+  if (!user)
+    return <div style={styles.container}>Loading...</div>;
+
+  return (
+    <div style={styles.container}>
+      <h1 style={styles.h1}>🛠️ Dashboard</h1>
+      <p style={{ fontSize: '16px', color: '#555', marginBottom: '20px' }}>
+        Welcome, <strong>{user.email}</strong>
+      </p>
+
+      <input
+        placeholder="Display Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        style={styles.input}
+      />
+
+      <h2 style={styles.h2}>Your Links</h2>
+      {Array.isArray(links) && links.map((link, i) => (
+        <div key={i} style={styles.row}>
+          <input
+            value={link.label || ''}
+            onChange={(e) => updateLink(i, 'label', e.target.value)}
+            style={{ ...styles.input, width: '40%' }}
+          />
+          <input
+            value={link.url || ''}
+            onChange={(e) => updateLink(i, 'url', e.target.value)}
+            style={{ ...styles.input, width: '40%' }}
+          />
+          <button
+            onClick={() => removeLink(i)}
+            style={styles.removeBtn}
+          >
+            ✖
+          </button>
+        </div>
+      ))}
+
+      <button onClick={addLink} style={styles.btn}>
+        + Add Link
+      </button>
+
+      <button onClick={save} style={styles.saveBtn}>
+        💾 Save
+      </button>
+
+      <a href={`/u/${user.username || user.email}`} style={styles.viewBtn}>
+        👉 View Public Page
+      </a>
+
+      <a href="/api/auth/logout" style={styles.logoutBtn}>
+        🔐 Logout
+      </a>
+    </div>
+  );
+}
+
+// Styles
+const baseBtn = {
+  padding: '12px',
+  background: '#95a5a6',
+  color: 'white',
+  border: 'none',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  marginTop: '10px',
+};
+
+const styles = {
+  container: {
+    padding: '40px',
+    fontFamily: 'Arial, sans-serif',
+    backgroundColor: '#f7f9fc',
+    minHeight: '100vh',
+  },
+  h1: { fontSize: '28px', color: '#1a1a1a', marginBottom: '20px' },
+  h2: { fontSize: '20px', color: '#333', margin: '30px 0 10px' },
+  input: {
+    padding: '12px',
+    margin: '6px 0',
+    width: '100%',
+    border: '1px solid #ddd',
+    borderRadius: '6px',
+    fontSize: '16px',
+  },
+  row: {
+    display: 'flex',
+    gap: '10px',
+    flexWrap: 'wrap',
+    marginBottom: '8px',
+  },
+  removeBtn: {
+    padding: '10px',
+    background: '#e74c3c',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+  },
+  btn: baseBtn,
+  saveBtn: { ...baseBtn, background: '#5865F2' },
+  viewBtn: {
+    display: 'block',
+    padding: '12px',
+    margin: '10px 0',
+    backgroundColor: '#2ecc71',
+    color: 'white',
+    textAlign: 'center',
+    borderRadius: '6px',
+    textDecoration: 'none',
+  },
+  logoutBtn: {
+    display: 'block',
+    padding: '12px',
+    margin: '10px 0',
+    backgroundColor: '#9b59b6',
+    color: 'white',
+    textAlign: 'center',
+    borderRadius: '6px',
+    textDecoration: 'none',
+  },
+  error: {
+    padding: '16px',
+    margin: '20px',
+    backgroundColor: '#e74c3c',
+    color: 'white',
+    borderRadius: '6px',
+    textAlign: 'center',
+  },
+};

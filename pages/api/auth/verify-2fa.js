@@ -1,5 +1,5 @@
 // /pages/api/auth/verify-2fa.js
-import { getDb } from '../../utils/db';
+import { getDb } from '../utils/db'; // ← Fixed path
 import jwt from 'jsonwebtoken';
 
 export default async function handler(req, res) {
@@ -15,14 +15,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid or expired 2FA code' });
   }
 
-  // Issue JWT token
   const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-  // Set HttpOnly cookie
   res.setHeader('Set-Cookie', `token=${token}; Path=/; HttpOnly; Max-Age=3600`);
 
-  // Delete 2FA code after use (security)
-  await db.collection('2fa-codes').deleteOne({ email });
+  await db.collection('2fa-codes').deleteOne({ email }); // Delete after use
 
   res.status(200).json({ token });
 }

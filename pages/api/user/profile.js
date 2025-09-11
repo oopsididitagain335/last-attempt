@@ -10,7 +10,6 @@ export default async function handler(req, res) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const db = await getDb();
 
-    // Fetch user WITHOUT password
     const user = await db.collection('users').findOne(
       { email: decoded.email },
       { projection: { password: 0 } }

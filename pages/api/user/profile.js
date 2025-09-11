@@ -1,5 +1,5 @@
 // /pages/api/user/profile.js
-import { getDb } from '../../utils/db';
+import { getDb } from '../utils/db'; // ← Fixed path
 import jwt from 'jsonwebtoken';
 
 export default async function handler(req, res) {
